@@ -11,6 +11,8 @@ module.exports = Model.extend "CharacterModel",
       characterModel.baseHitPoints = options.hitPoints || @DEFAULT_OPTIONS.hitPoints
       characterModel.alive = true
       characterModel.abilities = @_buildAbilities options.abilities || {}
+      characterModel.experiencePoints = 0
+      characterModel.level = 1
 
       characterModel
 
@@ -37,12 +39,24 @@ module.exports = Model.extend "CharacterModel",
       damageToDeal = @_damageToDeal dieRoll, strengthModifier
       if @_determineHitSuccess enemyCharacterModel, attackRoll
         enemyCharacterModel.wasHit damageToDeal, attackRoll
+        @_addExperiencePoints 10
 
     wasHit: (damage, attackRoll) ->
       @baseHitPoints -= damage
 
       if @baseHitPoints <= 0
         @alive = false
+
+    _addExperiencePoints: (amount) ->
+      @experiencePoints += amount
+
+      newLevel = Math.floor(@experiencePoints / 1000) + 1
+
+      if newLevel isnt @level
+        _.each [@level..newLevel - 1], (i) =>
+          @baseHitPoints += 5 + @abilities.constitution.modifier()
+
+        @level = newLevel
 
     _determineStrengthModifier: (dieRoll) ->
       strengthModifier = @abilities.strength.modifier()
@@ -65,7 +79,8 @@ module.exports = Model.extend "CharacterModel",
       damage
 
     _determineAttackRoll: (dieRoll, strengthModifier) ->
-      dieRoll + strengthModifier
+      levelModifier = Math.floor @level / 2
+      dieRoll + strengthModifier + levelModifier
 
     _determineHitSuccess: (enemyCharacterModel, attackRoll) ->
       enemyArmorClass = enemyCharacterModel.armorClass + enemyCharacterModel.abilities.dexterity.modifier()

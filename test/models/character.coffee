@@ -1,6 +1,8 @@
 CharacterModel = require "models/Character"
 AbilityModel = require "models/Ability"
 
+attackExperiencePoints = 10
+
 describe "Model Character", ->
   minimumCharacterOptions =
     name: "Jake"
@@ -39,6 +41,12 @@ describe "Model Character", ->
         expect(@characterModel.abilities.wisdom).to.not.equal undefined
         expect(@characterModel.abilities.intelligence).to.not.equal undefined
         expect(@characterModel.abilities.charisma).to.not.equal undefined
+
+      it "has 0 experience points", ->
+        expect(@characterModel.experiencePoints).to.equal 0
+
+      it "begins as level 1", ->
+        expect(@characterModel.level).to.equal 1
 
     context "with extra options", ->
       extraCharacterOptions =
@@ -99,6 +107,13 @@ describe "Model Character", ->
 
           @enemyModel.wasHit.restore()
 
+        it "gains experience", ->
+          newExperiencePoints = @characterModel.experiencePoints + attackExperiencePoints
+
+          @characterModel.attack @enemyModel, 10
+
+          expect(@characterModel.experiencePoints).to.equal newExperiencePoints
+
       context "with a low roll", ->
         enemyModelOptions = _.extend (_.extend {}, minimumEnemyOptions),
           armorClass: 20
@@ -114,6 +129,13 @@ describe "Model Character", ->
           sinon.assert.notCalled @enemyModel.wasHit
 
           @enemyModel.wasHit.restore()
+
+        it "gains no experience", ->
+          newExperiencePoints = @characterModel.experiencePoints
+
+          @characterModel.attack @enemyModel, 10
+
+          expect(@characterModel.experiencePoints).to.equal newExperiencePoints
 
     context "when blocking", ->
       characterModelOptions = _.extend (_.extend {}, minimumCharacterOptions),
@@ -274,9 +296,42 @@ describe "Model Character", ->
 
             @characterModel.wasHit.restore()
 
+    context "leveling up", ->
+      beforeEach ->
+        @characterModel = CharacterModel.create minimumCharacterOptions
+        @enemyModel = CharacterModel.create minimumEnemyOptions
+
+      it "happens every one thousand experience points", ->
+        @characterModel.experiencePoints = 990
+        @characterModel.attack @enemyModel, 20
+        expect(@characterModel.level).to.equal 2
+
+        @characterModel.experiencePoints = 1990
+        @characterModel.attack @enemyModel, 20
+        expect(@characterModel.level).to.equal 3
+
+        @characterModel.experiencePoints = 8990
+        @characterModel.attack @enemyModel, 20
+        expect(@characterModel.level).to.equal 10
+
+      it "increases hit points", ->
+        @characterModel.experiencePoints = 1990
+        @characterModel.attack @enemyModel, 20
+
+        expect(@characterModel.hitPoints()).to.equal 16 # dont forget about constitution adding that +1
+
+      it "increases attack rolls", ->
+        @characterModel.experiencePoints = 17990 # level 19
+        @characterModel.attack @enemyModel, 10
+
+        sinon.stub @enemyModel, "wasHit"
+        @characterModel.attack @enemyModel, 10
+        sinon.assert.calledWith @enemyModel.wasHit, 1, 19
+        @enemyModel.wasHit.restore()
+
   context "in general", ->
-    context "with modifiers", ->
-      context "high constitution", ->
+    context "using modifiers", ->
+      context "with high constitution", ->
         extraCharacterOptions = _.extend (_.extend {}, minimumCharacterOptions),
           hitPoints: 10
           abilities:
@@ -288,7 +343,7 @@ describe "Model Character", ->
         it "gives a bonus to hitpoints", ->
           expect(@characterModel.hitPoints()).to.equal 15
 
-      context "low constitution", ->
+      context "with low constitution", ->
         extraCharacterOptions = _.extend (_.extend {}, minimumCharacterOptions),
           hitPoints: 10
           abilities:
