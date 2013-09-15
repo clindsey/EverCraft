@@ -1,0 +1,10 @@
+{{#camelize}}{{name}}{{/camelize}}View = require "views/{{#camelize}}{{name}}{{/camelize}}"
+
+describe "View {{#camelize}}{{name}}{{/camelize}}", ->
+  beforeEach ->
+    @{{name}}View = {{#camelize}}{{name}}{{/camelize}}View.create()
+
+  afterEach ->
+    @{{name}}View.dispose()
+
+    expect({{#camelize}}{{name}}{{/camelize}}View.getUsedLength()).to.equal 0

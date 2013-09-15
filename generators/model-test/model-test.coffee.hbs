@@ -1,0 +1,10 @@
+{{#camelize}}{{name}}{{/camelize}}Model = require "models/{{#camelize}}{{name}}{{/camelize}}"
+
+describe "Model {{#camelize}}{{name}}{{/camelize}}", ->
+  beforeEach ->
+    @{{name}}Model = {{#camelize}}{{name}}{{/camelize}}Model.create()
+
+  afterEach ->
+    @{{name}}Model.dispose()
+
+    expect({{#camelize}}{{name}}{{/camelize}}Model.getPool().isUsed.length()).to.equal 0
