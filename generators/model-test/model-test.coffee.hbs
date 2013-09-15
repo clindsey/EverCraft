@@ -7,4 +7,4 @@ describe "Model {{#camelize}}{{name}}{{/camelize}}", ->
   afterEach ->
     @{{name}}Model.dispose()
 
-    expect({{#camelize}}{{name}}{{/camelize}}Model.getPool().isUsed.length()).to.equal 0
+    expect({{#camelize}}{{name}}{{/camelize}}Model.getUsedLength()).to.equal 0
