@@ -44,6 +44,7 @@ module.exports = Model.extend "RuleEngineModel",
       newLevel = Math.floor(characterModel.experiencePoints / 1000) + 1
 
       if newLevel isnt level
+        # this doesn't belong here
         _.each [level..newLevel - 1], =>
           characterModel.baseHitPoints += 5 + characterModel.abilities.constitution.modifier()
 
