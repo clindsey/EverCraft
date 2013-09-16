@@ -1,5 +1,6 @@
 CharacterModel = require "models/Character"
 AbilityModel = require "models/Ability"
+RuleEngineModel = require "models/RuleEngine"
 
 attackExperiencePoints = 10
 
@@ -8,16 +9,21 @@ describe "Model Character", ->
     name: "Jake"
     alignment: "Neutral"
 
+  beforeEach ->
+    @ruleEngineModel = RuleEngineModel.create()
+
   afterEach ->
     @characterModel.dispose()
+    @ruleEngineModel.dispose()
 
     expect(CharacterModel.getUsedLength()).to.equal 0
     expect(AbilityModel.getUsedLength()).to.equal 0
+    expect(RuleEngineModel.getUsedLength()).to.equal 0
 
   context "when created", ->
     context "with minimum options", ->
       beforeEach ->
-        @characterModel = CharacterModel.create minimumCharacterOptions
+        @characterModel = CharacterModel.create minimumCharacterOptions, @ruleEngineModel
 
       it "has a name", ->
         expect(@characterModel.name).to.equal minimumCharacterOptions.name
@@ -48,6 +54,9 @@ describe "Model Character", ->
       it "begins as level 1", ->
         expect(@characterModel.level).to.equal 1
 
+      it "has a rule engine", ->
+        expect(@characterModel.ruleEngineModel).to.not.equal undefined
+
     context "with extra options", ->
       extraCharacterOptions =
         armorClass: 11
@@ -63,7 +72,7 @@ describe "Model Character", ->
       characterModelOptions = _.extend (_.extend {}, minimumCharacterOptions), extraCharacterOptions
 
       beforeEach ->
-        @characterModel = CharacterModel.create characterModelOptions
+        @characterModel = CharacterModel.create characterModelOptions, @ruleEngineModel
 
       it "has different armor class", ->
         expect(@characterModel.armorClass).to.equal characterModelOptions.armorClass
@@ -89,14 +98,14 @@ describe "Model Character", ->
 
     context "when attacking", ->
       beforeEach ->
-        @characterModel = CharacterModel.create minimumCharacterOptions
+        @characterModel = CharacterModel.create minimumCharacterOptions, @ruleEngineModel
 
       context "with a high roll", ->
         enemyModelOptions = _.extend (_.extend {}, minimumEnemyOptions),
           armorClass: 1
 
         beforeEach ->
-          @enemyModel = CharacterModel.create enemyModelOptions
+          @enemyModel = CharacterModel.create enemyModelOptions, @ruleEngineModel
 
         it "hits", ->
           sinon.stub @enemyModel, "wasHit"
@@ -119,7 +128,7 @@ describe "Model Character", ->
           armorClass: 20
 
         beforeEach ->
-          @enemyModel = CharacterModel.create enemyModelOptions
+          @enemyModel = CharacterModel.create enemyModelOptions, @ruleEngineModel
 
         it "misses", ->
           sinon.stub @enemyModel, "wasHit"
@@ -143,8 +152,8 @@ describe "Model Character", ->
         hitPoints: 7
 
       beforeEach ->
-        @characterModel = CharacterModel.create characterModelOptions
-        @enemyModel = CharacterModel.create minimumEnemyOptions
+        @characterModel = CharacterModel.create characterModelOptions, @ruleEngineModel
+        @enemyModel = CharacterModel.create minimumEnemyOptions, @ruleEngineModel
 
       context "a successful attack", ->
         it "gets hit", ->
@@ -182,8 +191,8 @@ describe "Model Character", ->
         hitPoints: 1
 
       beforeEach ->
-        @characterModel = CharacterModel.create characterModelOptions
-        @enemyModel = CharacterModel.create minimumEnemyOptions
+        @characterModel = CharacterModel.create characterModelOptions, @ruleEngineModel
+        @enemyModel = CharacterModel.create minimumEnemyOptions, @ruleEngineModel
 
       context "when blocking", ->
         it "dies", ->
@@ -194,7 +203,7 @@ describe "Model Character", ->
     context "using modifiers", ->
       context "on the enemy", ->
         beforeEach ->
-          @characterModel = CharacterModel.create minimumCharacterOptions
+          @characterModel = CharacterModel.create minimumCharacterOptions, @ruleEngineModel
 
         context "using high strength", ->
           enemyModelOptions = _.extend (_.extend {}, minimumEnemyOptions),
@@ -202,7 +211,7 @@ describe "Model Character", ->
               strength: 20
 
           beforeEach ->
-            @enemyModel = CharacterModel.create enemyModelOptions
+            @enemyModel = CharacterModel.create enemyModelOptions, @ruleEngineModel
 
           it "applies to attack roll and damage dealt", ->
             sinon.stub @characterModel, "wasHit"
@@ -228,7 +237,7 @@ describe "Model Character", ->
               strength: 1
 
           beforeEach ->
-            @enemyModel = CharacterModel.create enemyModelOptions
+            @enemyModel = CharacterModel.create enemyModelOptions, @ruleEngineModel
 
           it "minimum damage is at least 1", ->
             sinon.stub @characterModel, "wasHit"
@@ -265,8 +274,8 @@ describe "Model Character", ->
               dexterity: 20
 
           beforeEach ->
-            @characterModel = CharacterModel.create extraCharacterOptions
-            @enemyModel = CharacterModel.create minimumEnemyOptions
+            @characterModel = CharacterModel.create extraCharacterOptions, @ruleEngineModel
+            @enemyModel = CharacterModel.create minimumEnemyOptions, @ruleEngineModel
 
           it "applies to armor class", ->
             sinon.stub @characterModel, "wasHit"
@@ -284,8 +293,8 @@ describe "Model Character", ->
               dexterity: 1
 
           beforeEach ->
-            @characterModel = CharacterModel.create extraCharacterOptions
-            @enemyModel = CharacterModel.create minimumEnemyOptions
+            @characterModel = CharacterModel.create extraCharacterOptions, @ruleEngineModel
+            @enemyModel = CharacterModel.create minimumEnemyOptions, @ruleEngineModel
 
           it "applies to armor class", ->
             sinon.stub @characterModel, "wasHit"
@@ -298,8 +307,8 @@ describe "Model Character", ->
 
     context "leveling up", ->
       beforeEach ->
-        @characterModel = CharacterModel.create minimumCharacterOptions
-        @enemyModel = CharacterModel.create minimumEnemyOptions
+        @characterModel = CharacterModel.create minimumCharacterOptions, @ruleEngineModel
+        @enemyModel = CharacterModel.create minimumEnemyOptions, @ruleEngineModel
 
       it "happens every one thousand experience points", ->
         @characterModel.experiencePoints = 990
@@ -338,7 +347,7 @@ describe "Model Character", ->
             constitution: 20
 
         beforeEach ->
-          @characterModel = CharacterModel.create extraCharacterOptions
+          @characterModel = CharacterModel.create extraCharacterOptions, @ruleEngineModel
 
         it "gives a bonus to hitpoints", ->
           expect(@characterModel.hitPoints()).to.equal 15
@@ -350,7 +359,7 @@ describe "Model Character", ->
             constitution: 1
 
         beforeEach ->
-          @characterModel = CharacterModel.create extraCharacterOptions
+          @characterModel = CharacterModel.create extraCharacterOptions, @ruleEngineModel
 
         it "gives a bonus to hitpoints", ->
           expect(@characterModel.hitPoints()).to.equal 11

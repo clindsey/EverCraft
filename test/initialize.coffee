@@ -2,6 +2,7 @@ tests = [
   # list all source files here, line-by-line
   "test/models/character"
   "test/models/ability"
+  "test/models/ruleEngine"
   "test/index"
 ]
 

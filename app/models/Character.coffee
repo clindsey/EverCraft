@@ -2,7 +2,7 @@ Model = require "models/base/Model"
 AbilityModel = require "models/Ability"
 
 module.exports = Model.extend "CharacterModel",
-    create: (options) ->
+    create: (options, ruleEngineModel) ->
       characterModel = @_super()
 
       characterModel.name = options.name
@@ -13,6 +13,7 @@ module.exports = Model.extend "CharacterModel",
       characterModel.abilities = @_buildAbilities options.abilities || {}
       characterModel.experiencePoints = 0
       characterModel.level = 1
+      characterModel.ruleEngineModel = ruleEngineModel
 
       characterModel
 
@@ -34,57 +35,17 @@ module.exports = Model.extend "CharacterModel",
       @baseHitPoints + hitPointModifier
 
     attack: (enemyCharacterModel, dieRoll) ->
-      strengthModifier = @_determineStrengthModifier dieRoll
-      attackRoll = @_determineAttackRoll dieRoll, strengthModifier
-      damageToDeal = @_damageToDeal dieRoll, strengthModifier
-      if @_determineHitSuccess enemyCharacterModel, attackRoll
+      attackRoll = @ruleEngineModel.determineAttackRoll @, dieRoll
+      damageToDeal = @ruleEngineModel.damageToDeal @, dieRoll
+      if @ruleEngineModel.determineHitSuccess @, enemyCharacterModel, dieRoll
         enemyCharacterModel.wasHit damageToDeal, attackRoll
-        @_addExperiencePoints 10
+        @ruleEngineModel.addExperiencePoints @, 10
 
     wasHit: (damage, attackRoll) ->
       @baseHitPoints -= damage
 
       if @baseHitPoints <= 0
         @alive = false
-
-    _addExperiencePoints: (amount) ->
-      @experiencePoints += amount
-
-      newLevel = Math.floor(@experiencePoints / 1000) + 1
-
-      if newLevel isnt @level
-        _.each [@level..newLevel - 1], (i) =>
-          @baseHitPoints += 5 + @abilities.constitution.modifier()
-
-        @level = newLevel
-
-    _determineStrengthModifier: (dieRoll) ->
-      strengthModifier = @abilities.strength.modifier()
-
-      if dieRoll is 20
-        strengthModifier *= 2
-
-      strengthModifier
-
-    _damageToDeal: (dieRoll, strengthModifier) ->
-      damage = 1
-
-      damage += strengthModifier
-
-      if dieRoll is 20
-        damage += 1
-
-      damage = Math.max damage, 1
-
-      damage
-
-    _determineAttackRoll: (dieRoll, strengthModifier) ->
-      levelModifier = Math.floor @level / 2
-      dieRoll + strengthModifier + levelModifier
-
-    _determineHitSuccess: (enemyCharacterModel, attackRoll) ->
-      enemyArmorClass = enemyCharacterModel.armorClass + enemyCharacterModel.abilities.dexterity.modifier()
-      attackRoll >= enemyArmorClass
 
     dispose: ->
       _.invoke @abilities, "dispose"

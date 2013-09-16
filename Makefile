@@ -8,10 +8,10 @@ clean:
 	rm -rf public/*
 
 live:
-	./node_modules/.bin/grunt live
+	./node_modules/.bin/grunt live --force
 
 tdd:
-	./node_modules/.bin/grunt tdd
+	./node_modules/.bin/grunt tdd --force
 
 serve:
 	./node_modules/.bin/grunt serve
